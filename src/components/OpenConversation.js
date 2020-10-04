@@ -9,13 +9,15 @@ export default function OpenConversation() {
       node.scrollIntoView({ smooth: true });
     }
   }, []);
-  const { sendMessage, selectedConversations } = useConversations();
+  const { sendMessage, selectedConversation } = useConversations();
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    console.log(selectedConversation);
+
     sendMessage(
-      selectedConversations.recipients.map((r) => r.id),
+      selectedConversation.recipients.map((r) => r.id),
       text
     );
     setText("");
@@ -25,9 +27,9 @@ export default function OpenConversation() {
     <div className="d-flex flex-column flex-grow-1">
       <div className="flex-grow-1 overflow-auto">
         <div className="d-flex flex-column align-items-start justify-content-end px-3">
-          {selectedConversations.messages.map((message, index) => {
+          {selectedConversation.messages.map((message, index) => {
             const lastMessage =
-              selectedConversations.messages.length - 1 === index;
+              selectedConversation.messages.length - 1 === index;
             return (
               <div
                 ref={lastMessage ? setRef : null}
