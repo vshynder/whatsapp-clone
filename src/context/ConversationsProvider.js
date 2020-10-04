@@ -9,7 +9,7 @@ export function useConversations() {
   return useContext(ConversationsContext);
 }
 
-export function ConversationsProvider({ children }) {
+export function ConversationsProvider({ id, children }) {
   const [conversations, setConversations] = useLocalStorage(
     "conversations",
     []
@@ -23,6 +23,30 @@ export function ConversationsProvider({ children }) {
     });
   };
 
+  const addMessageToConversation = ({ recipients, text, sender }) => {
+    setConversations((prevConversations) => {
+      let madeChange = false;
+      const newMessage = { sender, text };
+
+      const newConversations = prevConversations.map((conv) => {
+        if (arrayEquality(conv.recipients, recipients)) {
+          madeChange = true;
+          return { ...conv, messages: [...conv.messages, newMessage] };
+        }
+      });
+
+      if (madeChange) {
+        return newConversations;
+      } else {
+        return [...prevConversations, { recipients, messages: [newMessage] }];
+      }
+    });
+  };
+
+  const sendMessage = (recipients, text) => {
+    addMessageToConversation({ recipients, text, sender: id });
+  };
+
   const formattedConversations = conversations.map((conversation, index) => {
     const recipients = conversation.recipients.map((recipient) => {
       const contact = contacts.find((contact) => contact.id === recipient);
@@ -30,16 +54,25 @@ export function ConversationsProvider({ children }) {
       return { id: recipient, name };
     });
 
+    const messages = conversation.messages.map((message) => {
+      const contact = contacts.find((contact) => contact.id === message.sender);
+      const name = (contact && contact.name) || message.sender;
+      const fromMe = id === message.sender;
+      return { ...message, senderName: name, fromMe };
+    });
+
     const selected = index === selectedConversationIndex;
 
-    return { ...conversation, recipients, selected };
+    return { ...conversation, messages, recipients, selected };
   });
 
   return (
     <ConversationsContext.Provider
       value={{
         conversations: formattedConversations,
-        seectedConversations: formattedConversations[selectedConversationIndex],
+        selectedConversations:
+          formattedConversations[selectedConversationIndex],
+        sendMessage,
         selectConversationIndex: setSelectedConversationIndex,
         createConversation,
       }}
@@ -47,4 +80,14 @@ export function ConversationsProvider({ children }) {
       {children}
     </ConversationsContext.Provider>
   );
+}
+
+function arrayEquality(a, b) {
+  if (a.length !== b.length) return false;
+
+  a.sort();
+  b.sort();
+  return a.every((el, index) => {
+    return el === b[index];
+  });
 }
